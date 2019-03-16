@@ -5,30 +5,14 @@ go:
 
 install: go build -o jikefm
 
+os: osx
+
 env:
   - GO111MODULE=on
 
 before_deploy:
-  - PLATFORMS=(darwin/amd64 linux/386 linux/amd64 windows/386 windows/amd64)
-  - |
-    for PLATFORM in "${PLATFORMS[@]}"; do
-      echo "Building $PLATFORM"
-      GOOS=${PLATFORM%/*}
-      GOARCH=${PLATFORM#*/}
-      if [ "$GOOS" = "windows" ]; then
-        build_cmd="GOOS=$GOOS GOARCH=$GOARCH go build -o jikefm -ldflags '-w -s'"
-      else
-        build_cmd="CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o jikefm -ldflags '-d -w -s'"
-      fi
-      if ! eval $build_cmd; then
-        echo "Failed building jikefm for $PLATFORM" && return 1
-      fi
-      if [ "$GOOS" = "windows" ]; then
-        zip jikefm-${GOOS}-${GOARCH}.zip jikefm
-      else
-        tar cvzf jikefm-${GOOS}-${GOARCH}.tgz jikefm
-      fi
-    done
+  - go build -o jikefm
+  - tar cvzf jikefm-darwin-amd64.tgz jikefm
   - ls
 
 deploy:
@@ -36,10 +20,6 @@ deploy:
   api_key: $AUTH_TOKEN
   file:
     - "jikefm-darwin-amd64.tgz"
-    - "jikefm-linux-386.tgz"
-    - "jikefm-linux-arm.tgz"
-    - "jikefm-windows-386.zip"
-    - "jikefm-windows-amd64.zip"
 
   skip_cleanup: true
   on:
