@@ -1,7 +1,7 @@
 # 即刻电台
 > WIP
 
-![即刻电台](./dist/exmaple.gif)
+![即刻电台](https://raw.githubusercontent.com/findingsea/jikefm/master/dist/example.gif)
 
 ## Feature
 
