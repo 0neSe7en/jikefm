@@ -9,7 +9,7 @@
 
 ## Install
 
-.
+`go get -u github.com/0nese7en/jikefm`
 
 ## TODO
 
