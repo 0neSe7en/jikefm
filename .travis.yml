@@ -5,6 +5,9 @@ go:
 
 install: go build -o jikefm
 
+env:
+  - GO111MODULE=on
+
 before_deploy:
   - PLATFORMS=(darwin/amd64 linux/386 linux/amd64 windows/386 windows/amd64)
   - |
