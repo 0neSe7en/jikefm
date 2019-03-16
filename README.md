@@ -1,6 +1,8 @@
 # 即刻电台
 > WIP
 
+![即刻电台](https://raw.githubusercontent.com/findingsea/jikefm/master/dist/example.gif)
+
 ## Feature
 
 播放晚安电台的热门曲目
