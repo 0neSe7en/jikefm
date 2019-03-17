@@ -1,12 +1,9 @@
-package main
+package jike
 
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 )
-
-var apiUrl = "https://app.jike.ruguoapp.com/1.0/messages/history"
 
 type Audio struct {
 	Title  string `json:"title"`
@@ -47,49 +44,37 @@ type Request struct {
 	LoadMoreKey string `json:"loadMoreKey"`
 }
 
-func Fetch(topicId string) (Response, error) {
-	return FetchMore(topicId, "")
-}
-
-func FetchMore(topicId string, skip string) (Response, error) {
-	var res Response
+func FetchMoreSelected(session *Session, topicId string, skip string) (res Response, err error) {
 	req := Request{
 		TopicId: topicId,
 		Limit:   20,
 	}
 	req.LoadMoreKey = skip
 	jsonStr, err := json.Marshal(req)
+
 	if err != nil {
-		return res, err
-	}
-	request := NewRequest("POST", apiUrl, bytes.NewBuffer(jsonStr))
-	request.Header.Set("Content-Type", "application/json")
-	resp, err := Client().Do(request)
-	if err != nil {
-		return res, err
+		return
 	}
 
-	defer resp.Body.Close()
+	body, err := session.Post(topicSelected, bytes.NewBuffer(jsonStr))
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
 	if err := json.Unmarshal(body, &res); err != nil {
 		return res, err
 	}
-	return res, nil
+	return res, err
 }
 
-func FetchFMOnly(topicId string) ([]Message, string, error) {
-	return FetchMoreFM(topicId, "")
-}
-
-func FetchMoreFM(topicId string, skip string) ([]Message, string, error) {
-	res, err := FetchMore(topicId, skip)
+func FetchMoreSelectedFM(session *Session, topicId string, skip string) ([]Message, string, error) {
+	res, err := FetchMoreSelected(session, topicId, skip)
 	if err != nil {
 		return nil, "", err
 	}
 	var messages []Message
 	for _, msg := range res.Data {
-		// only support netease music right now
 		if msg.LinkInfo.Source == "163.com" && msg.LinkInfo.Audio.Type == "AUDIO" {
 			messages = append(messages, msg)
 		}

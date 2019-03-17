@@ -1,4 +1,4 @@
-package main
+package musicapi
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func NeteaseUrlToMp3(urlstr string) string {
 }
 
 func NeteaseDownload(mp3Url string) (io.ReadCloser, error) {
-	resp, err := Client().Do(NewRequest("GET", mp3Url, nil))
+	resp, err := client().Do(newRequest("GET", mp3Url, nil))
 	if err != nil {
 		return nil, err
 	}

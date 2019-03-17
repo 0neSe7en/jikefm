@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/0neSe7en/jikefm/jike"
+	"github.com/0neSe7en/jikefm/musicapi"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/effects"
 	"github.com/faiface/beep/mp3"
@@ -13,6 +15,7 @@ import (
 )
 
 var topic = "55483ddee4b03ccbae843925"
+var CurrentSession *jike.Session
 
 var targetFormat = beep.Format{
 	SampleRate:  44100,
@@ -27,7 +30,7 @@ type Music struct {
 }
 
 type Player struct {
-	playlist     []Message
+	playlist     []jike.Message
 	currentMusic Music
 	streamer     beep.Streamer
 	ctrl         *beep.Ctrl
@@ -70,7 +73,7 @@ func newPlayer() *Player {
 }
 
 func (p *Player) feed() {
-	res, next, _ := FetchMoreFM(topic, p.skip)
+	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, topic, p.skip)
 	for _, msg := range res {
 		p.playlist = append(p.playlist, msg)
 	}
@@ -85,8 +88,8 @@ func (p *Player) play() {
 }
 
 func (p *Player) playIndex(next int) beep.Streamer {
-	mp3Url := NeteaseUrlToMp3(p.playlist[next].LinkInfo.LinkUrl)
-	f, err := NeteaseDownload(mp3Url)
+	mp3Url := musicapi.NeteaseUrlToMp3(p.playlist[next].LinkInfo.LinkUrl)
+	f, err := musicapi.NeteaseDownload(mp3Url)
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -172,6 +175,7 @@ func (p *Player) handle(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func main() {
+	CurrentSession = jike.NewSession()
 	_ = speaker.Init(targetFormat.SampleRate, targetFormat.SampleRate.N(time.Second/30))
 	defer player.close()
 
