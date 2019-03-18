@@ -16,8 +16,18 @@ func NeteaseUrlToMp3(urlstr string) string {
 	if err != nil {
 		return ""
 	}
-	q := u.Query()
-	musicId := q.Get("id")
+	var q url.Values
+	var musicId string
+	if u.Fragment != "" {
+		q, err = url.ParseQuery(u.Fragment)
+		if err != nil {
+			return ""
+		}
+		musicId = q.Get("/song?id")
+	} else {
+		q = u.Query()
+		musicId = q.Get("id")
+	}
 	if musicId != "" {
 		return toMp3UrlWithId(musicId)
 	}

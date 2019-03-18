@@ -3,6 +3,7 @@ package musicapi
 import "testing"
 
 var urls = []string{
+	"https://music.163.com/#/song?id=4875306",
 	"https://music.163.com/song/4875306/",
 	"https://music.163.com/song?id=4875306",
 	"https://music.163.com/song/4875306",
@@ -15,7 +16,7 @@ func TestNeteaseUrlToMp3(t *testing.T) {
 	for _, urlstr := range urls {
 		res := NeteaseUrlToMp3(urlstr)
 		if res != expect {
-			t.Fatalf("Expect %s, Got %s", expect, res)
+			t.Fatalf("Test %s Expect %s, Got %s", urlstr, expect, res)
 		}
 	}
 }
