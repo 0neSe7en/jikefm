@@ -33,6 +33,10 @@ type Message struct {
 	User     User     `json:"user"`
 }
 
+func (m Message) GetTitle() string {
+	return m.LinkInfo.Title
+}
+
 type Response struct {
 	Data        []Message `json:"data"`
 	LoadMoreKey string    `json:"loadMoreKey"`

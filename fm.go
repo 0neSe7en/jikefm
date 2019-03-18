@@ -5,74 +5,37 @@ import (
 	"github.com/0neSe7en/jikefm/jike"
 	"github.com/0neSe7en/jikefm/musicapi"
 	"github.com/faiface/beep"
-	"github.com/faiface/beep/effects"
-	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
 	"time"
 	"unicode"
 )
 
 var topic = "55483ddee4b03ccbae843925"
 var CurrentSession *jike.Session
-
-var targetFormat = beep.Format{
-	SampleRate:  44100,
-	NumChannels: 2,
-	Precision:   2,
-}
+var fm = newFm()
 
 type Music struct {
 	url    string
-	seeker beep.StreamSeeker
 	index  int
 }
 
-type Player struct {
+type JikeFm struct {
 	playlist     []jike.Message
+	player *Player
 	currentMusic Music
-	streamer     beep.Streamer
-	ctrl         *beep.Ctrl
-	volume       *effects.Volume
+	nextMusicIndex int
 	skip         string
 }
 
-var UI = struct {
-	app    *tview.Application
-	root   *tview.Flex
-	header *tview.TextView
-	side   *tview.List
-	main   *tview.TextView
-}{
-	app:    tview.NewApplication(),
-	root:   tview.NewFlex().SetDirection(tview.FlexRow),
-	header: tview.NewTextView().SetDynamicColors(true),
-	main:   tview.NewTextView().SetDynamicColors(true),
-	side:   tview.NewList(),
-}
-
-var player = newPlayer()
-
-func init() {
-	UI.root.SetRect(0, 0, 120, 40)
-	UI.header.SetBorder(true).SetTitle("JIKE FM")
-	UI.side.SetBorder(true)
-	UI.main.SetBorder(true)
-	UI.root.
-		AddItem(UI.header, 8, 1, false).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(UI.side, 40, 1, true).
-			AddItem(UI.main, 0, 1, false),
-			0, 1, false)
-}
-
-func newPlayer() *Player {
-	p := &Player{}
+func newFm() *JikeFm {
+	p := &JikeFm{}
+	p.player = newPlayer(p.iter)
+	p.nextMusicIndex = 0
 	return p
 }
 
-func (p *Player) feed() {
+func (p *JikeFm) feed() {
 	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, topic, p.skip)
 	for _, msg := range res {
 		p.playlist = append(p.playlist, msg)
@@ -80,95 +43,92 @@ func (p *Player) feed() {
 	p.skip = next
 }
 
-func (p *Player) play() {
-	p.currentMusic.index = -1
-	p.streamer = beep.Iterate(player.iter)
-	p.ctrl = &beep.Ctrl{Streamer: player.streamer}
-	speaker.Play(p.ctrl)
+func (p *JikeFm) play() {
+	p.player.open()
 }
 
-func (p *Player) playIndex(next int) beep.Streamer {
+func (p *JikeFm) playIndex(next int) beep.Streamer {
 	mp3Url := musicapi.NeteaseUrlToMp3(p.playlist[next].LinkInfo.LinkUrl)
 	f, err := musicapi.NeteaseDownload(mp3Url)
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
-	streamer, _, err := mp3.Decode(f)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
+	current := p.currentMusic.index
 	p.currentMusic = Music{
-		seeker: streamer,
 		url:    mp3Url,
 		index:  next,
 	}
-	return streamer
+	UI.app.QueueUpdateDraw(func () {
+		p.drawHeader()
+		p.changeSong(current, next)
+	})
+	return p.player.playMp3(f)
 }
 
-func (p *Player) add() {
-
-}
-
-func (p *Player) close() {
-
-}
-
-func (p *Player) onSelectChange(index int, _ string, _ string, _ rune) {
+func (p *JikeFm) onSelectChange(index int, _ string, _ string, _ rune) {
 	i := index
 	if index < 0 {
-		i = len(player.playlist) + index
+		i = len(p.playlist) + index
 	}
-	if index >= len(player.playlist) {
-		i = index - len(player.playlist)
+	if index >= len(p.playlist) {
+		i = index - len(p.playlist)
 	}
-	msg := player.playlist[i]
-	content := fmt.Sprintf("%s\n [yellow]by %s", msg.Content, msg.User.ScreenName)
+	msg := p.playlist[i]
+	content := fmt.Sprintf("%s\n[green]@%s", msg.Content, msg.User.ScreenName)
 	UI.main.SetText(content)
 }
 
-func (p *Player) onEnterPlay(index int, mainText string, secondaryText string, shortcut rune) {
-	speaker.Clear()
-	p.currentMusic.index = index - 1
-	p.streamer = beep.Iterate(player.iter)
-	p.ctrl = &beep.Ctrl{Streamer: player.streamer}
-	speaker.Play(p.ctrl)
+func (p *JikeFm) onEnterPlay(index int, mainText string, secondaryText string, shortcut rune) {
+	p.nextMusicIndex = index
+	p.player.reset().open()
 }
 
-func (p *Player) drawHeader() {
-	UI.app.QueueUpdateDraw(func() {
-		speaker.Lock()
-		position := targetFormat.SampleRate.D(player.currentMusic.seeker.Position())
-		text := fmt.Sprintf("  %s [green]%v", p.playlist[p.currentMusic.index].LinkInfo.Title, position.Round(time.Second))
-		speaker.Unlock()
-		UI.header.SetText(text)
-	})
+func (p *JikeFm) drawHeader() {
+	text := fmt.Sprintf(headerTemplate,
+		p.playlist[p.currentMusic.index].GetTitle(),
+		p.player.currentPosition(),
+	)
+	UI.header.SetText(text)
 }
 
-func (p *Player) iter() beep.Streamer {
+func (p *JikeFm) changeSong(from int, target int) {
+	if from >= 0 {
+		UI.side.SetItemText(
+			from,
+			normalText(from, p.playlist[from].GetTitle()),
+			"",
+		)
+	}
+	UI.side.SetItemText(
+		target,
+		playingText(target, p.playlist[target].GetTitle()),
+		"",
+	)
+}
+
+func (p *JikeFm) iter() beep.Streamer {
 	if len(p.playlist) == 0 {
 		return nil
 	}
-	current := p.currentMusic.index
+	stream := p.playIndex(p.nextMusicIndex)
 	var next int
-	if next = current + 1; next >= len(p.playlist) {
+	if next = p.nextMusicIndex + 1; next >= len(p.playlist) {
 		next = 0
 	}
-	go p.drawHeader()
-	return p.playIndex(next)
+	p.nextMusicIndex = next
+
+	return stream
 }
 
-func (p *Player) handle(event *tcell.EventKey) *tcell.EventKey {
+func (p *JikeFm) handle(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyESC:
 		UI.app.Stop()
 	case tcell.KeyRune:
 		switch unicode.ToLower(event.Rune()) {
 		case ' ':
-			speaker.Lock()
-			p.ctrl.Paused = !p.ctrl.Paused
-			speaker.Unlock()
+			p.player.togglePlay()
 		}
 	}
 	return event
@@ -177,41 +137,40 @@ func (p *Player) handle(event *tcell.EventKey) *tcell.EventKey {
 func main() {
 	CurrentSession = jike.NewSession()
 	_ = speaker.Init(targetFormat.SampleRate, targetFormat.SampleRate.N(time.Second/30))
-	defer player.close()
+
+	defer fm.player.close()
 
 	for {
-		player.feed()
-		if len(player.playlist) > 20 {
+		fm.feed()
+		if len(fm.playlist) > 20 {
 			break
 		}
 	}
 
-	player.onSelectChange(0, "", "", 0)
+	fm.onSelectChange(0, "", "", 0)
 
-	for index, msg := range player.playlist {
-		var shortcut rune
-		if index > 9 {
-			shortcut = 0
-		} else {
-			shortcut = rune(index + '0')
-		}
-		UI.side.AddItem(msg.LinkInfo.Title, "", shortcut, nil)
+	for index, msg := range fm.playlist {
+		UI.side.AddItem(normalText(index, msg.GetTitle()), "", 0, nil)
 	}
+
 	UI.side.
-		SetChangedFunc(player.onSelectChange).
-		SetSelectedFunc(player.onEnterPlay).
+		SetChangedFunc(fm.onSelectChange).
+		SetSelectedFunc(fm.onEnterPlay).
 		ShowSecondaryText(false)
-	UI.app.SetInputCapture(player.handle)
-	player.play()
+	UI.app.SetInputCapture(fm.handle)
+
+	fm.play()
 
 	go func() {
 		for {
 			time.Sleep(time.Second)
-			player.drawHeader()
+			go UI.app.QueueUpdateDraw(func () {
+				fm.drawHeader()
+			})
 		}
 	}()
 
-	if err := UI.app.SetRoot(UI.root, false).SetFocus(UI.side).Run(); err != nil {
+	if err := run(); err != nil {
 		panic(err)
 	}
 }
