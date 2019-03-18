@@ -7,11 +7,16 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell"
+	"strings"
 	"time"
 	"unicode"
 )
 
-var topic = "55483ddee4b03ccbae843925"
+var topics = map[string]string{
+	"55483ddee4b03ccbae843925": "晚安电台",
+	"5a1ccf936e6e7c0011037480": "即友在听什么歌",
+}
+
 var CurrentSession *jike.Session
 var fm = newFm()
 
@@ -24,19 +29,22 @@ type JikeFm struct {
 	playlist     []jike.Message
 	player *Player
 	currentMusic Music
+	currentTopic string
 	nextMusicIndex int
 	skip         string
 }
 
 func newFm() *JikeFm {
-	p := &JikeFm{}
+	p := &JikeFm{
+		currentTopic:"55483ddee4b03ccbae843925",
+	}
 	p.player = newPlayer(p.iter)
 	p.nextMusicIndex = 0
 	return p
 }
 
 func (p *JikeFm) feed() {
-	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, topic, p.skip)
+	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, p.currentTopic, p.skip)
 	for _, msg := range res {
 		p.playlist = append(p.playlist, msg)
 	}
@@ -75,8 +83,8 @@ func (p *JikeFm) onSelectChange(index int, _ string, _ string, _ rune) {
 		i = index - len(p.playlist)
 	}
 	msg := p.playlist[i]
-	content := fmt.Sprintf("%s\n[green]@%s", msg.Content, msg.User.ScreenName)
-	UI.main.SetText(content)
+	UI.main.SetText(msg.Content)
+	UI.mainAuthor.SetText("[green]@" + msg.User.ScreenName)
 }
 
 func (p *JikeFm) onEnterPlay(index int, mainText string, secondaryText string, shortcut rune) {
@@ -85,7 +93,7 @@ func (p *JikeFm) onEnterPlay(index int, mainText string, secondaryText string, s
 }
 
 func (p *JikeFm) drawHeader() {
-	text := fmt.Sprintf(headerTemplate,
+	text := fmt.Sprintf(headerTpl,
 		p.playlist[p.currentMusic.index].GetTitle(),
 		p.player.currentPosition(),
 	)
@@ -158,6 +166,12 @@ func main() {
 		SetSelectedFunc(fm.onEnterPlay).
 		ShowSecondaryText(false)
 	UI.app.SetInputCapture(fm.handle)
+
+	var s []string
+	for id, topicName := range topics {
+		s = append(s, fmt.Sprintf(`["%s"]%s[""]`, id, topicName))
+	}
+	UI.footerTopic.SetText("| " + strings.Join(s, " | ") + " |")
 
 	fm.play()
 
