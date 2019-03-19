@@ -49,7 +49,7 @@ func init() {
 			SetText(footerTpl),
 	}
 	UI.root.SetRect(0, 0, 110, 40)
-	UI.header.SetBorder(true).SetTitle("即刻电台 " + version)
+	UI.header.SetBorder(true).SetTitle(" 即刻电台 " + version)
 
 	footerContainer := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(UI.footerTopic, 44, 1, false).
