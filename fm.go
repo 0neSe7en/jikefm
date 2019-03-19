@@ -155,20 +155,23 @@ func (p *JikeFm) queueMore() {
 	}
 }
 
-func (p *JikeFm) iter() beep.Streamer {
-	if len(p.playlist) == 0 {
-		return nil
-	}
-	stream := p.playIndex(p.nextMusicIndex)
-	next := p.nextMusicIndex + 1
+func (p *JikeFm) calcNextIndex() int {
+	next := p.currentMusic.index + 1
 	if next > len(p.playlist) - 1 {
 		p.queueMore()
 	}
 	if next >= len(p.playlist) {
 		next = 0
 	}
-	p.nextMusicIndex = next
+	return next
+}
 
+func (p *JikeFm) iter() beep.Streamer {
+	if len(p.playlist) == 0 {
+		return nil
+	}
+	stream := p.playIndex(p.nextMusicIndex)
+	p.nextMusicIndex = p.calcNextIndex()
 	return stream
 }
 
@@ -177,8 +180,16 @@ func (p *JikeFm) handle(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyESC:
 		UI.app.Stop()
 	case tcell.KeyCtrlN:
+		p.nextMusicIndex = p.calcNextIndex()
+		p.player.reset().open()
 		return nil
 	case tcell.KeyCtrlP:
+		var n int
+		if n := p.currentMusic.index - 1; n < 0 {
+			n = 0
+		}
+		p.nextMusicIndex = n
+		p.player.reset().open()
 		return nil
 	case tcell.KeyTab:
 		return nil
@@ -186,6 +197,8 @@ func (p *JikeFm) handle(event *tcell.EventKey) *tcell.EventKey {
 		switch unicode.ToLower(event.Rune()) {
 		case ' ':
 			p.player.togglePlay()
+			return nil
+		case 't':
 			return nil
 		}
 	}
