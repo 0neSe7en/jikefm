@@ -22,7 +22,7 @@ var UI Components
 var headerTpl = `
     [red]♫  ♪ ♫  ♪ [yellow]%s
 
-    [green]顺序循环  (%s)
+    [green]顺序循环  (%s)  %s
 
 `
 

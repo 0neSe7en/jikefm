@@ -39,6 +39,7 @@ type JikeFm struct {
 	nextMusicIndex    int
 	skip              string
 	more              chan bool
+	timer             *time.Timer
 }
 
 func newFm() *JikeFm {
@@ -50,6 +51,22 @@ func newFm() *JikeFm {
 	p.nextMusicIndex = 0
 	go p.fetchMore()
 	return p
+}
+
+func (p *JikeFm) setTimer(d time.Duration) {
+	if p.timer != nil {
+		p.stopTimer()
+	}
+	p.timer = time.AfterFunc(d, func() {
+		UI.app.Stop()
+	})
+}
+
+func (p *JikeFm) stopTimer() {
+	if p.timer != nil {
+		p.timer.Stop()
+		p.timer = nil
+	}
 }
 
 func (p *JikeFm) fetchMore() {
@@ -129,6 +146,7 @@ func (p *JikeFm) drawHeader() {
 	text := fmt.Sprintf(headerTpl,
 		p.playlist[p.currentMusic.index].GetTitle(),
 		p.player.currentPosition(),
+		"",
 	)
 	UI.header.SetText(text)
 }
@@ -177,8 +195,6 @@ func (p *JikeFm) iter() beep.Streamer {
 
 func (p *JikeFm) handle(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
-	case tcell.KeyESC:
-		UI.app.Stop()
 	case tcell.KeyCtrlN:
 		p.nextMusicIndex = p.calcNextIndex()
 		p.player.reset().open()
