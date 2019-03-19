@@ -188,7 +188,7 @@ func main() {
 	defer fm.player.close()
 
 	UI.app.SetInputCapture(fm.handle)
-	UI.footerTopic.SetText("| " + strings.Join(s, " | ") + " |")
+	UI.footerTopic.SetText("|" + strings.Join(s, "|") + "|")
 
 	fm.switchTopic()
 	fm.play()

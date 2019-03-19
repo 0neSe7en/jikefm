@@ -32,7 +32,7 @@ var headerTpl = `
 
 `
 
-var footerTpl = `ENTER [green]播放[white]  SPACE [green]暂停[white] CTRL-N/CTRL-P [green]下一首/上一首[white]  `
+var footerTpl = `TAB [green]切换圈子 ENTER [green]播放[white] SPACE [green]暂停[white] CTRL-N/CTRL-P [green]下/上一首[white]  `
 var normalTpl = "[yellow]% 3d) \t[-:-:-]%s"
 var playingTpl = "[purple]% 3d) \t->[::b] %s"
 
@@ -48,11 +48,11 @@ func init() {
 			SetDynamicColors(true).SetRegions(true).SetWrap(false).SetTextAlign(tview.AlignRight).
 			SetText(footerTpl),
 	}
-	UI.root.SetRect(0, 0, 100, 40)
+	UI.root.SetRect(0, 0, 110, 40)
 	UI.header.SetBorder(true).SetTitle("即刻电台 " + version)
 
 	footerContainer := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(UI.footerTopic, 40, 1, false).
+		AddItem(UI.footerTopic, 44, 1, false).
 		AddItem(UI.footerHelp, 0, 1, false)
 
 	footerContainer.SetBackgroundColor(tcell.ColorGrey)
@@ -80,7 +80,7 @@ func addTopic(topicId string) *TopicUI {
 	mainContainer.SetBorder(true).SetBorderPadding(1, 0, 2, 2)
 
 	topicUI.root.
-		AddItem(topicUI.side, 40, 1, true).
+		AddItem(topicUI.side, 44, 1, true).
 		AddItem(mainContainer, 0, 1, false)
 
 	UI.topics = append(UI.topics, topicUI)

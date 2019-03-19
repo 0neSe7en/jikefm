@@ -19,6 +19,7 @@ type TopicList map[string]*Topic
 
 var topicOrder = []string{
 	"55483ddee4b03ccbae843925",
+	"5899dc1063ed1a0015bade08",
 	"5a1ccf936e6e7c0011037480",
 }
 
@@ -26,6 +27,11 @@ var topics = TopicList{
 	"55483ddee4b03ccbae843925": {
 		id: "55483ddee4b03ccbae843925",
 		name: "晚安电台",
+		playing: -1,
+	},
+	"5899dc1063ed1a0015bade08": {
+		id: "5899dc1063ed1a0015bade08",
+		name: "早安歌曲",
 		playing: -1,
 	},
 	"5a1ccf936e6e7c0011037480": {

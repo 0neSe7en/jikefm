@@ -110,7 +110,7 @@ func WaitLogin(uuid string) bool {
 	req.URL.RawQuery = q.Encode()
 	resp, err := client().Do(req)
 	if err != nil {
-		log.Println(err, "wait login fail")
+		//log.Println(err, "wait login fail")
 		return false
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -118,7 +118,7 @@ func WaitLogin(uuid string) bool {
 		LoggedIn bool `json:"logged_in"`
 	}
 	if err := json.Unmarshal(body, &data); err != nil {
-		log.Println(err, "wait login fail")
+		//log.Println(err, "wait login fail")
 		return false
 	}
 	return data.LoggedIn
