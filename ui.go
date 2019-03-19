@@ -6,13 +6,19 @@ import (
 	"github.com/rivo/tview"
 )
 
+type TopicUI struct {
+	root    *tview.Flex
+	content *tview.TextView
+	author  *tview.TextView
+	side    *tview.List
+}
+
 type Components struct {
 	app         *tview.Application
 	root        *tview.Flex
 	header      *tview.TextView
-	side        *tview.List
-	main        *tview.TextView
-	mainAuthor  *tview.TextView
+	topicPages  *tview.Pages
+	topics      []*TopicUI
 	footerTopic *tview.TextView
 	footerHelp  *tview.TextView
 }
@@ -35,9 +41,7 @@ func init() {
 		app:        tview.NewApplication(),
 		root:       tview.NewFlex().SetDirection(tview.FlexRow),
 		header:     tview.NewTextView().SetDynamicColors(true),
-		main:       tview.NewTextView().SetDynamicColors(true),
-		mainAuthor: tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight),
-		side:       tview.NewList().SetSelectedBackgroundColor(tcell.ColorDimGray),
+		topicPages:		tview.NewPages(),
 		footerTopic: tview.NewTextView().
 			SetDynamicColors(true).SetRegions(true).SetWrap(false).SetTextAlign(tview.AlignCenter),
 		footerHelp: tview.NewTextView().
@@ -46,12 +50,6 @@ func init() {
 	}
 	UI.root.SetRect(0, 0, 100, 40)
 	UI.header.SetBorder(true).SetTitle("即刻电台 " + version)
-	UI.side.SetBorder(true).SetBorderPadding(1, 0, 0, 1)
-
-	mainContainer := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(UI.main, 0, 1, false).
-		AddItem(UI.mainAuthor, 2, 1, false)
-	mainContainer.SetBorder(true).SetBorderPadding(1, 0, 2, 2)
 
 	footerContainer := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(UI.footerTopic, 40, 1, false).
@@ -63,12 +61,31 @@ func init() {
 
 	UI.root.
 		AddItem(UI.header, 7, 1, false).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(UI.side, 40, 1, true).
-			AddItem(mainContainer, 0, 1, false),
-			0, 1, false).
+		AddItem(UI.topicPages, 0, 1, false).
 		AddItem(footerContainer, 1, 1, false)
-	UI.app.SetRoot(UI.root, false).SetFocus(UI.side)
+	UI.app.SetRoot(UI.root, false)
+}
+
+func addTopic(topicId string) *TopicUI {
+	topicUI := &TopicUI{
+		root: tview.NewFlex().SetDirection(tview.FlexColumn),
+		side: tview.NewList().SetSelectedBackgroundColor(tcell.ColorDimGray),
+		content: tview.NewTextView().SetDynamicColors(true),
+		author: tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight),
+	}
+	topicUI.side.SetBorder(true).SetBorderPadding(1, 0, 0, 1)
+	mainContainer := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(topicUI.content, 0, 1, false).
+		AddItem(topicUI.author, 2, 1, false)
+	mainContainer.SetBorder(true).SetBorderPadding(1, 0, 2, 2)
+
+	topicUI.root.
+		AddItem(topicUI.side, 40, 1, true).
+		AddItem(mainContainer, 0, 1, false)
+
+	UI.topics = append(UI.topics, topicUI)
+	UI.topicPages.AddPage(topicId, topicUI.root, true, false)
+	return topicUI
 }
 
 func normalText(index int, title string) string {
@@ -77,10 +94,6 @@ func normalText(index int, title string) string {
 
 func playingText(index int, title string) string {
 	return fmt.Sprintf(playingTpl, index, title)
-}
-
-func updateTotalSong(count int) {
-	UI.side.SetTitle(fmt.Sprintf(" 歌曲数: %d", count))
 }
 
 func run() error {

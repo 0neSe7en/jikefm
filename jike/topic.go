@@ -3,6 +3,7 @@ package jike
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/0neSe7en/jikefm/musicapi"
 )
 
 type Audio struct {
@@ -31,6 +32,7 @@ type Message struct {
 	LinkInfo LinkInfo `json:"linkInfo"`
 	Topic    Topic    `json:"topic"`
 	User     User     `json:"user"`
+	Mp3Url   string
 }
 
 func (m Message) GetTitle() string {
@@ -80,7 +82,11 @@ func FetchMoreSelectedFM(session *Session, topicId string, skip string) ([]Messa
 	var messages []Message
 	for _, msg := range res.Data {
 		if msg.LinkInfo.Source == "163.com" && msg.LinkInfo.Audio.Type == "AUDIO" {
-			messages = append(messages, msg)
+			url := musicapi.NeteaseUrlToMp3(msg.LinkInfo.LinkUrl)
+			if url != "" {
+				msg.Mp3Url = url
+				messages = append(messages, msg)
+			}
 		}
 	}
 	return messages, res.LoadMoreKey, nil
