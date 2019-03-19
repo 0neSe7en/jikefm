@@ -7,14 +7,14 @@ import (
 )
 
 type Components struct {
-	app    *tview.Application
-	root   *tview.Flex
-	header *tview.TextView
-	side   *tview.List
-	main   *tview.TextView
-	mainAuthor   *tview.TextView
+	app         *tview.Application
+	root        *tview.Flex
+	header      *tview.TextView
+	side        *tview.List
+	main        *tview.TextView
+	mainAuthor  *tview.TextView
 	footerTopic *tview.TextView
-	footerHelp *tview.TextView
+	footerHelp  *tview.TextView
 }
 
 var UI Components
@@ -32,12 +32,12 @@ var playingTpl = "[purple]% 3d) \t->[::b] %s"
 
 func init() {
 	UI = Components{
-		app:    tview.NewApplication(),
-		root:   tview.NewFlex().SetDirection(tview.FlexRow),
-		header: tview.NewTextView().SetDynamicColors(true),
-		main:   tview.NewTextView().SetDynamicColors(true),
+		app:        tview.NewApplication(),
+		root:       tview.NewFlex().SetDirection(tview.FlexRow),
+		header:     tview.NewTextView().SetDynamicColors(true),
+		main:       tview.NewTextView().SetDynamicColors(true),
 		mainAuthor: tview.NewTextView().SetDynamicColors(true).SetTextAlign(tview.AlignRight),
-		side:   tview.NewList().SetSelectedBackgroundColor(tcell.ColorDimGray),
+		side:       tview.NewList().SetSelectedBackgroundColor(tcell.ColorDimGray),
 		footerTopic: tview.NewTextView().
 			SetDynamicColors(true).SetRegions(true).SetWrap(false).SetTextAlign(tview.AlignCenter),
 		footerHelp: tview.NewTextView().
@@ -66,7 +66,7 @@ func init() {
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
 			AddItem(UI.side, 40, 1, true).
 			AddItem(mainContainer, 0, 1, false),
-		0, 1, false).
+			0, 1, false).
 		AddItem(footerContainer, 1, 1, false)
 	UI.app.SetRoot(UI.root, false).SetFocus(UI.side)
 }

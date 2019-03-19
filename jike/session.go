@@ -50,7 +50,9 @@ func (s *Session) Login() error {
 	if err != nil {
 		log.Fatal(err, "create session failed")
 	}
-	var data struct{Uuid string `json:"uuid"`}
+	var data struct {
+		Uuid string `json:"uuid"`
+	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Fatal(err, "create session failed")
 	}
@@ -112,7 +114,9 @@ func WaitLogin(uuid string) bool {
 		return false
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	var data struct { LoggedIn bool `json:"logged_in"`}
+	var data struct {
+		LoggedIn bool `json:"logged_in"`
+	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		log.Println(err, "wait login fail")
 		return false
@@ -130,7 +134,9 @@ func ConfirmLogin(uuid string) (string, error) {
 		return "", errors.New("confirm login fail")
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	var data struct { Token string `json:"token"`}
+	var data struct {
+		Token string `json:"token"`
+	}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return "", errors.New("confirm login fail")
 	}

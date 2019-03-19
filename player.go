@@ -23,7 +23,7 @@ type Player struct {
 	volume        *effects.Volume
 	streamer      beep.Streamer
 	currentStream beep.StreamSeeker
-	onNext IterFunc
+	onNext        IterFunc
 }
 
 func newPlayer(onNext IterFunc) *Player {
@@ -35,7 +35,7 @@ func newPlayer(onNext IterFunc) *Player {
 func (p *Player) reset() *Player {
 	speaker.Clear()
 	p.streamer = beep.Iterate(p.onNext)
-	p.ctrl = &beep.Ctrl{Streamer:p.streamer}
+	p.ctrl = &beep.Ctrl{Streamer: p.streamer}
 	return p
 }
 

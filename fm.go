@@ -14,7 +14,7 @@ import (
 )
 
 type Topic struct {
-	id string
+	id   string
 	name string
 }
 
@@ -27,24 +27,24 @@ var CurrentSession *jike.Session
 var fm = newFm()
 
 type Music struct {
-	url    string
-	index  int
+	url   string
+	index int
 }
 
 type JikeFm struct {
-	playlist     []jike.Message
-	player *Player
-	currentMusic Music
+	playlist          []jike.Message
+	player            *Player
+	currentMusic      Music
 	currentTopicIndex int
-	nextMusicIndex int
-	skip         string
-	more chan bool
+	nextMusicIndex    int
+	skip              string
+	more              chan bool
 }
 
 func newFm() *JikeFm {
 	p := &JikeFm{
 		currentTopicIndex: 0,
-		more: make(chan bool, 1),
+		more:              make(chan bool, 1),
 	}
 	p.player = newPlayer(p.iter)
 	p.nextMusicIndex = 0
@@ -54,7 +54,7 @@ func newFm() *JikeFm {
 
 func (p *JikeFm) fetchMore() {
 	for {
-		<- p.more
+		<-p.more
 		msgs := p.feed()
 
 		UI.app.QueueUpdateDraw(func() {
@@ -94,10 +94,10 @@ func (p *JikeFm) playIndex(next int) beep.Streamer {
 	}
 	current := p.currentMusic.index
 	p.currentMusic = Music{
-		url:    mp3Url,
-		index:  next,
+		url:   mp3Url,
+		index: next,
 	}
-	UI.app.QueueUpdateDraw(func () {
+	UI.app.QueueUpdateDraw(func() {
 		p.drawHeader()
 		p.changeSong(current, next)
 	})
@@ -112,7 +112,7 @@ func (p *JikeFm) onSelectChange(index int, _ string, _ string, _ rune) {
 	if index >= len(p.playlist) {
 		i = index - len(p.playlist)
 	}
-	if index == len(p.playlist) - 1 {
+	if index == len(p.playlist)-1 {
 		p.queueMore()
 	}
 	msg := p.playlist[i]
@@ -137,13 +137,13 @@ func (p *JikeFm) changeSong(from int, target int) {
 	if from >= 0 {
 		UI.side.SetItemText(
 			from,
-			normalText(from + 1, p.playlist[from].GetTitle()),
+			normalText(from+1, p.playlist[from].GetTitle()),
 			"",
 		)
 	}
 	UI.side.SetItemText(
 		target,
-		playingText(target + 1, p.playlist[target].GetTitle()),
+		playingText(target+1, p.playlist[target].GetTitle()),
 		"",
 	)
 }
@@ -157,7 +157,7 @@ func (p *JikeFm) queueMore() {
 
 func (p *JikeFm) calcNextIndex() int {
 	next := p.currentMusic.index + 1
-	if next > len(p.playlist) - 1 {
+	if next > len(p.playlist)-1 {
 		p.queueMore()
 	}
 	if next >= len(p.playlist) {
@@ -234,7 +234,7 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(time.Second)
-			go UI.app.QueueUpdateDraw(func () {
+			go UI.app.QueueUpdateDraw(func() {
 				fm.drawHeader()
 			})
 		}
