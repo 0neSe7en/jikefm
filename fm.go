@@ -7,14 +7,20 @@ import (
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	"github.com/gdamore/tcell"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
 )
 
-var topics = map[string]string{
-	"55483ddee4b03ccbae843925": "晚安电台",
-	"5a1ccf936e6e7c0011037480": "即友在听什么歌",
+type Topic struct {
+	id string
+	name string
+}
+
+var topics = []Topic{
+	{id: "55483ddee4b03ccbae843925", name: "晚安电台"},
+	{id: "5a1ccf936e6e7c0011037480", name: "即友在听什么歌"},
 }
 
 var CurrentSession *jike.Session
@@ -29,26 +35,50 @@ type JikeFm struct {
 	playlist     []jike.Message
 	player *Player
 	currentMusic Music
-	currentTopic string
+	currentTopicIndex int
 	nextMusicIndex int
 	skip         string
+	more chan bool
 }
 
 func newFm() *JikeFm {
 	p := &JikeFm{
-		currentTopic:"55483ddee4b03ccbae843925",
+		currentTopicIndex: 0,
+		more: make(chan bool, 1),
 	}
 	p.player = newPlayer(p.iter)
 	p.nextMusicIndex = 0
+	go p.fetchMore()
 	return p
 }
 
-func (p *JikeFm) feed() {
-	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, p.currentTopic, p.skip)
-	for _, msg := range res {
-		p.playlist = append(p.playlist, msg)
+func (p *JikeFm) fetchMore() {
+	for {
+		<- p.more
+		msgs := p.feed()
+
+		UI.app.QueueUpdateDraw(func() {
+			currentLen := len(p.playlist)
+			p.addToPlaylist(msgs)
+			updateTotalSong(len(p.playlist))
+			if p.nextMusicIndex == 0 {
+				p.nextMusicIndex = currentLen
+			}
+		})
 	}
+}
+
+func (p *JikeFm) feed() []jike.Message {
+	res, next, _ := jike.FetchMoreSelectedFM(CurrentSession, topics[p.currentTopicIndex].id, p.skip)
 	p.skip = next
+	return res
+}
+
+func (p *JikeFm) addToPlaylist(messages []jike.Message) {
+	for _, msg := range messages {
+		p.playlist = append(p.playlist, msg)
+		UI.side.AddItem(normalText(len(p.playlist), msg.GetTitle()), "", 0, nil)
+	}
 }
 
 func (p *JikeFm) play() {
@@ -82,6 +112,9 @@ func (p *JikeFm) onSelectChange(index int, _ string, _ string, _ rune) {
 	if index >= len(p.playlist) {
 		i = index - len(p.playlist)
 	}
+	if index == len(p.playlist) - 1 {
+		p.queueMore()
+	}
 	msg := p.playlist[i]
 	UI.main.SetText(msg.Content)
 	UI.mainAuthor.SetText("[green]@" + msg.User.ScreenName)
@@ -104,15 +137,22 @@ func (p *JikeFm) changeSong(from int, target int) {
 	if from >= 0 {
 		UI.side.SetItemText(
 			from,
-			normalText(from, p.playlist[from].GetTitle()),
+			normalText(from + 1, p.playlist[from].GetTitle()),
 			"",
 		)
 	}
 	UI.side.SetItemText(
 		target,
-		playingText(target, p.playlist[target].GetTitle()),
+		playingText(target + 1, p.playlist[target].GetTitle()),
 		"",
 	)
+}
+
+func (p *JikeFm) queueMore() {
+	select {
+	case p.more <- true:
+	default:
+	}
 }
 
 func (p *JikeFm) iter() beep.Streamer {
@@ -120,8 +160,11 @@ func (p *JikeFm) iter() beep.Streamer {
 		return nil
 	}
 	stream := p.playIndex(p.nextMusicIndex)
-	var next int
-	if next = p.nextMusicIndex + 1; next >= len(p.playlist) {
+	next := p.nextMusicIndex + 1
+	if next > len(p.playlist) - 1 {
+		p.queueMore()
+	}
+	if next >= len(p.playlist) {
 		next = 0
 	}
 	p.nextMusicIndex = next
@@ -133,10 +176,17 @@ func (p *JikeFm) handle(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyESC:
 		UI.app.Stop()
+	case tcell.KeyCtrlN:
+		return nil
+	case tcell.KeyCtrlP:
+		return nil
+	case tcell.KeyTab:
+		return nil
 	case tcell.KeyRune:
 		switch unicode.ToLower(event.Rune()) {
 		case ' ':
 			p.player.togglePlay()
+			return nil
 		}
 	}
 	return event
@@ -148,18 +198,10 @@ func main() {
 
 	defer fm.player.close()
 
-	for {
-		fm.feed()
-		if len(fm.playlist) > 20 {
-			break
-		}
-	}
+	fm.addToPlaylist(fm.feed())
+	updateTotalSong(len(fm.playlist))
 
 	fm.onSelectChange(0, "", "", 0)
-
-	for index, msg := range fm.playlist {
-		UI.side.AddItem(normalText(index, msg.GetTitle()), "", 0, nil)
-	}
 
 	UI.side.
 		SetChangedFunc(fm.onSelectChange).
@@ -168,10 +210,11 @@ func main() {
 	UI.app.SetInputCapture(fm.handle)
 
 	var s []string
-	for id, topicName := range topics {
-		s = append(s, fmt.Sprintf(`["%s"]%s[""]`, id, topicName))
+	for index, topic := range topics {
+		s = append(s, fmt.Sprintf(`["%d"]%s[""]`, index, topic.name))
 	}
 	UI.footerTopic.SetText("| " + strings.Join(s, " | ") + " |")
+	UI.footerTopic.Highlight(strconv.Itoa(fm.currentTopicIndex))
 
 	fm.play()
 
