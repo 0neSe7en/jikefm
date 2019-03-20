@@ -2,7 +2,7 @@ JIKEFM - 即刻电台📻
 ---
 [![Build Status](https://travis-ci.com/0neSe7en/jikefm.svg?branch=master)](https://travis-ci.com/0neSe7en/jikefm)
 
-![即刻电台](https://raw.githubusercontent.com/findingsea/jikefm/master/dist/example.gif)
+![即刻电台](https://raw.githubusercontent.com/0nese7en/jikefm/master/dist/example.gif)
 
 ## Feature
 
