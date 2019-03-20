@@ -32,7 +32,7 @@ var headerTpl = `
 
 `
 
-var footerTpl = `TAB [green]切换圈子 ENTER [green]播放[white] SPACE [green]暂停[white] CTRL-N/CTRL-P [green]下/上一首[white]  `
+var footerTpl = `TAB [green]切换圈子[white] ENTER [green]播放[white] SPACE [green]暂停[white] CTRL-N/CTRL-P [green]下/上一首[white]  `
 var normalTpl = "[yellow]% 3d) \t[-:-:-]%s"
 var playingTpl = "[purple]% 3d) \t->[::b] %s"
 
