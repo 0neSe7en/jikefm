@@ -25,6 +25,11 @@ JIKEFM - 即刻电台📻
 - [ ] 支持除网易云音乐以外的更多歌曲
 
 ## Dependencies
+
+在 Linux 系统中编译需要依赖 libasound2-dev，安装方法：
+
+`sudo apt-get install libasound2-dev`
+
 - [beep](https://github.com/faiface/beep)
 - [tview](https://github.com/rivo/tview)
 - [tview](https://github.com/gdamore/tcell)
