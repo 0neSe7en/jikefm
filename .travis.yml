@@ -3,16 +3,22 @@ language: go
 go:
   - 1.11.x
 
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libasound2-dev; fi
+
 install: go build -o jikefm
 
-os: osx
+os:
+  - osx
+  - linux
 
 env:
   - GO111MODULE=on
 
 before_deploy:
   - go build -o jikefm
-  - tar cvzf jikefm-darwin-amd64.tgz jikefm
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar cvzf jikefm-darwin-amd64.tgz jikefm; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar cvzf jikefm-linux-amd64.tgz jikefm; fi
   - ls
 
 deploy:
@@ -20,6 +26,7 @@ deploy:
   api_key: $AUTH_TOKEN
   file:
     - "jikefm-darwin-amd64.tgz"
+    - "jikefm-linux-amd64.tgz"
 
   skip_cleanup: true
   on:
